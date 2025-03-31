@@ -1,0 +1,16 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "customhf"
+version="0.0.1"
+authors = [
+   { name="Brian Walshe", email="walshe.brian@gmail.com" }
+]
+description = "An example of creating a custom Hugging Face model, based off Andrej Karpathy's GPT-2 Tutorial"
+dependencies = [
+   "torch",
+   "transformers[torch]",
+   "datasets"
+]
