@@ -17,7 +17,25 @@ def preprocess(dataset: Dataset, tokenizer: PreTrainedTokenizer, block_size: int
         return tokenizer(example['lines'], truncation=True,
                          max_length=block_size+1)
 
-    return dataset.map(process_example, remove_columns=["speaker", "lines"])
+    def make_blocks(examples):
+        concatenated_examples = {
+            k: sum(examples[k], []) for k in examples.keys()}
+        total_length = len(concatenated_examples[list(examples.keys())[0]])
+
+        if total_length >= block_size:
+            total_length = (total_length // block_size) * block_size
+
+        result = {
+            k: [t[i: i + block_size]
+                for i in range(0, total_length, block_size)]
+            for k, t in concatenated_examples.items()
+        }
+        #result["label"] = result["input_ids"].copy()
+
+        return result
+
+    return dataset.map(process_example, remove_columns=["speaker", "lines"])\
+        .map(make_blocks, batched=True, num_proc=4)
 
 
 def train():
