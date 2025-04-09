@@ -14,8 +14,7 @@ from customhf.model import BigramLanguageModel, BigramLanguageModelConfig
 def preprocess(dataset: Dataset, tokenizer: PreTrainedTokenizer, block_size: int = 8) -> Dataset:
 
     def process_example(example: dict[str, str]):
-        return tokenizer(example['lines'], truncation=True,
-                         max_length=block_size+1)
+        return tokenizer(example['lines'], truncation=True)
 
     def make_blocks(examples):
         concatenated_examples = {
@@ -30,7 +29,6 @@ def preprocess(dataset: Dataset, tokenizer: PreTrainedTokenizer, block_size: int
                 for i in range(0, total_length, block_size)]
             for k, t in concatenated_examples.items()
         }
-        #result["label"] = result["input_ids"].copy()
 
         return result
 
@@ -47,7 +45,6 @@ def train():
 
     data = preprocess(data, tokenizer)
 
-    # tokenizer.pad_token = tokenizer.eos_token
     collate = DataCollatorForLanguageModeling(tokenizer, mlm=False)
     model_config = BigramLanguageModelConfig(vocab_size=tokenizer.vocab_size)
     model = BigramLanguageModel(model_config)

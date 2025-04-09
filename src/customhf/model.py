@@ -1,17 +1,15 @@
 from torch import nn
 
-from transformers import PretrainedConfig, PreTrainedModel
+from transformers import PretrainedConfig, PreTrainedModel, GenerationMixin
+from transformers.models.auto.modeling_auto import MODEL_FOR_CAUSAL_LM_MAPPING
+from transformers.modeling_outputs import CausalLMOutput
 
 
 class BigramLanguageModelConfig(PretrainedConfig):
-    model_type = "bigram_language"
-
-    def __init__(self, vocab_size: int = 0, **kwargs):
-        self.vocab_size = vocab_size
-        super().__init__(**kwargs)
+    model_type = "bigram-language"
 
 
-class BigramLanguageModel(PreTrainedModel):
+class BigramLanguageModel(PreTrainedModel, GenerationMixin):
     config_class = BigramLanguageModelConfig
 
     def __init__(self, config):
@@ -21,15 +19,18 @@ class BigramLanguageModel(PreTrainedModel):
             self.vocab_size, self.vocab_size)
         self.loss_type = "ForCausalLM"
 
-    def forward(self, input_ids, attention_mask, labels=None):
+    def forward(self, input_ids, labels=None, **kwargs):
         """Args:
             idx: (B,T) tensor of integers
             targets: (B,T) tensor of integers
         """
         logits = self.token_embedding_table(input_ids)
 
-        if labels is None:
-            return {"logits": logits}
+        loss = None
+        if labels is not None:
+            loss = self.loss_function(
+                logits, labels, vocab_size=self.vocab_size)
+        return CausalLMOutput(loss=loss, logits=logits)
 
-        loss = self.loss_function(logits, labels, vocab_size=self.vocab_size)
-        return {"logits": logits, "loss": loss}
+
+MODEL_FOR_CAUSAL_LM_MAPPING.register("bigram-language", BigramLanguageModel)
