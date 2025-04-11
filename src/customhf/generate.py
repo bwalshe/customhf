@@ -1,20 +1,23 @@
 import argparse
+from pathlib import Path
 
-from customhf.model import BigramLanguageModel, BigramLanguageModelConfig
-from transformers import pipeline, AutoTokenizer
+from customhf.model import register_bigram_language_model
+from transformers import pipeline, AutoTokenizer, AutoModelForCausalLM
 
 
-def main(text: str) -> str:
-    tokenizer = AutoTokenizer.from_pretrained("google-bert/bert-base-uncased")
-    config = BigramLanguageModelConfig(vocab_size=tokenizer.vocab_size)
-    model = BigramLanguageModel(config)
+def generate(text: str, model: Path) -> None:
+    register_bigram_language_model()
+    tokenizer = AutoTokenizer.from_pretrained(model, sep_token=None)
+    model = AutoModelForCausalLM.from_pretrained(model)
     generate = pipeline("text-generation", model=model, tokenizer=tokenizer)
-    output = generate(text)
+    output = generate(text, do_sample=True)
     print(output)
 
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('text')
+    parser.add_argument("-m", "--model", type=Path, required=True,
+                        help="Path of a saved Hugging Face causal LM model")
+    parser.add_argument('text', help="The inital text")
     args = parser.parse_args()
-    main(args.text)
+    generate(args.text, args.model)

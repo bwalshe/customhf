@@ -14,3 +14,7 @@ dependencies = [
    "transformers[torch]",
    "datasets"
 ]
+
+[project.scripts]
+train-bigram = "customhf.train:train"
+generate-text = "customhf.generate:main"

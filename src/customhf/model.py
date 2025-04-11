@@ -48,6 +48,6 @@ class BigramLanguageModel(PreTrainedModel, GenerationMixin):
             return values
         return values.masked_fill(mask.bool(), self.pad_token_id)
 
-
-AutoConfig.register("bigram-language", BigramLanguageModelConfig)
-AutoModelForCausalLM.register(BigramLanguageModelConfig, BigramLanguageModel)
+def register_bigram_language_model():
+    AutoConfig.register("bigram-language", BigramLanguageModelConfig)
+    AutoModelForCausalLM.register(BigramLanguageModelConfig, BigramLanguageModel)

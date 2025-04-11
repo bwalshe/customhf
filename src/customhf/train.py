@@ -59,7 +59,7 @@ def train():
         weight_decay=0.01,
         eval_strategy="epoch",
         save_strategy="epoch",
-        load_best_model_at_end=True,
+        load_best_model_at_end=False,
         push_to_hub=False
     )
 
