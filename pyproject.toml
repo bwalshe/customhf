@@ -16,5 +16,5 @@ dependencies = [
 ]
 
 [project.scripts]
-train-bigram = "customhf.train:train"
+train-bigram = "customhf.train:main"
 generate-text = "customhf.generate:main"

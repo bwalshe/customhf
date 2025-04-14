@@ -1,3 +1,5 @@
+import argparse
+
 from transformers import (
     AutoTokenizer,
     DataCollatorForLanguageModeling,
@@ -36,7 +38,9 @@ def preprocess(dataset: Dataset, tokenizer: PreTrainedTokenizer, block_size: int
         .map(make_blocks, batched=True, num_proc=4)
 
 
-def train():
+def train(wandb: bool = False, push_to_hub: bool = False):
+    report_to = "wandb" if wandb else "none"
+
     data = script_dataset("input.txt")
 
     tokenizer = AutoTokenizer.from_pretrained("google-bert/bert-base-uncased")
@@ -51,7 +55,7 @@ def train():
 
     training_args = TrainingArguments(
         output_dir="bigram-model",
-        report_to="none",
+        report_to=report_to,
         learning_rate=2e-3,
         per_device_train_batch_size=16,
         per_device_eval_batch_size=16,
@@ -73,6 +77,21 @@ def train():
     )
 
     trainer.train()
+    if push_to_hub:
+        trainer.push_to_hub()
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-p", "--push-to-hub",
+                        action="store_true",
+                        help="upload the trained model to Hugging Face")
+    parser.add_argument("-r", "--report-to-wandb",
+                        action="store_true",
+                        help="Upload report to Weights and Biases")
+    args = parser.parse_args()
+
+    train(args.report_to_wandb, args.push_to_hub)
 
 
 if __name__ == "__main__":
