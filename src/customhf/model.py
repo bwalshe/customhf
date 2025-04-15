@@ -1,3 +1,4 @@
+import torch
 from torch import nn, Tensor
 
 from transformers import (
@@ -21,7 +22,7 @@ class BigramLanguageModel(PreTrainedModel, GenerationMixin):
         self.vocab_size = config.vocab_size
         self.pad_token_id = -100
         self.token_embedding_table = nn.Embedding(
-            self.vocab_size, self.vocab_size, padding_idx=self.pad_token_id)
+            self.vocab_size, self.vocab_size)
         self.loss_type = "ForCausalLM"
 
     def forward(self,
@@ -33,7 +34,6 @@ class BigramLanguageModel(PreTrainedModel, GenerationMixin):
             idx: (B,T) tensor of integers
             targets: (B,T) tensor of integers
         """
-        input_ids = self._apply_mask(input_ids, attention_mask)
         logits = self.token_embedding_table(input_ids)
 
         loss = None
@@ -44,9 +44,11 @@ class BigramLanguageModel(PreTrainedModel, GenerationMixin):
         return CausalLMOutput(loss=loss, logits=logits)
 
     def _apply_mask(self, values: Tensor, mask: Tensor) -> Tensor:
-        if mask.all():
+        if mask is None or mask.all():
             return values
+        mask = torch.ones_like(mask) - mask
         return values.masked_fill(mask.bool(), self.pad_token_id)
+
 
 def register_bigram_language_model():
     AutoConfig.register("bigram-language", BigramLanguageModelConfig)
