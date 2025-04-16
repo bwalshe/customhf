@@ -35,21 +35,33 @@ def test_loss_fn():
 
 def test_attention_mask():
     vocab_size = 2
-    examples = 10
+    token_len = 10
     config = BigramLanguageModelConfig(vocab_size=vocab_size)
-    model = BigramLanguageModel(config)
+    model_short = BigramLanguageModel(config)
+    model_long = BigramLanguageModel(config)
+
     with torch.no_grad():
-        model.token_embedding_table.weight = torch.nn.Parameter(
+        model_short.token_embedding_table.weight = torch.nn.Parameter(
+            torch.eye(vocab_size))
+        model_long.token_embedding_table.weight = torch.nn.Parameter(
             torch.eye(vocab_size))
 
-    input_ids = torch.ones(1, examples, dtype=torch.long)
-    labels = torch.cat(
-        (torch.ones(1, examples // 2, dtype=torch.long),
-         torch.zeros(1, examples // 2, dtype=torch.long)),
-        1)
-    mask = labels.clone()
-    result_no_mask =  model(input_ids=input_ids, labels=labels)
-    result_short = model(input_ids=input_ids[:, :examples // 2], labels=labels[:, :examples // 2])
-    result_masked = model(input_ids=input_ids, attention_mask=mask, labels=labels)
-    assert result_short["loss"] < result_no_mask["loss"]
-    assert result_short["loss"] == result_masked["loss"]
+    input_ids = torch.ones(1, token_len, dtype=torch.long)
+    input_ids_short = input_ids[:, :token_len//2].clone()
+    labels_short = input_ids_short.clone()
+
+    labels_long = torch.cat((input_ids_short, 1-input_ids_short), 1)
+    mask = labels_long.clone()
+
+    loss_short = model_short(input_ids=input_ids_short,
+                             labels=labels_short).loss
+    loss_long = model_long(input_ids=input_ids,
+                           attention_mask=mask, labels=labels_long).loss
+
+    loss_short.backward()
+    loss_long.backward()
+
+    grad_short = model_short.token_embedding_table.weight.grad
+    grad_long = model_long.token_embedding_table.weight.grad
+    assert grad_long is not None
+    assert torch.all(torch.eq(grad_short, grad_long))
