@@ -1,8 +1,10 @@
 import argparse
 from pathlib import Path
 
-from customhf.model import register_bigram_language_model
 from transformers import pipeline, AutoTokenizer, AutoModelForCausalLM
+
+from customhf import _try_setup_logging
+from customhf.model import register_bigram_language_model
 
 
 def generate(text: str, model: Path) -> None:
@@ -15,9 +17,14 @@ def generate(text: str, model: Path) -> None:
 
 
 def main():
+    _try_setup_logging()
     parser = argparse.ArgumentParser()
     parser.add_argument("-m", "--model", type=Path, required=True,
                         help="Path of a saved Hugging Face causal LM model")
     parser.add_argument('text', help="The inital text")
     args = parser.parse_args()
     generate(args.text, args.model)
+
+
+if __name__ == "__main__":
+    main()

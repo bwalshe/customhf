@@ -11,6 +11,7 @@ from transformers.tokenization_utils import PreTrainedTokenizer
 
 from customhf.data import script_dataset
 from customhf.model import BigramLanguageModel, BigramLanguageModelConfig
+from customhf import _try_setup_logging
 
 
 def preprocess(dataset: Dataset, tokenizer: PreTrainedTokenizer, block_size: int = 8) -> Dataset:
@@ -82,6 +83,7 @@ def train(wandb: bool = False, push_to_hub: bool = False):
 
 
 def main():
+    _try_setup_logging()
     parser = argparse.ArgumentParser()
     parser.add_argument("-p", "--push-to-hub",
                         action="store_true",
