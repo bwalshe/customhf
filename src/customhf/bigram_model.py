@@ -48,7 +48,7 @@ class BigramLanguageModel(PreTrainedModel, GenerationMixin):
             inputs_embeds: needed for compatibilility wtih text generation pipeline, processing these inputs is not implemented
             use_cache: needed for compatiblity with text gneration pipeline - ignored.
             return_dict: (`bool`, *optional*):
-                Whether or not to return a [`~utils.ModelOutput`] instead of a plain tuple.
+                Whether or not to return a ModelOutput object instead of a plain tuple.
         """
         if inputs_embeds is not None:
             raise NotImplementedError(

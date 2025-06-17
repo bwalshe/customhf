@@ -4,11 +4,13 @@ from pathlib import Path
 from transformers import pipeline, AutoTokenizer, AutoModelForCausalLM
 
 from customhf import _try_setup_logging
-from customhf.model import register_bigram_language_model
+from customhf.bigram_model import register_bigram_language_model
+from customhf.gpt2_model import register_gpt2_language_model
 
 
 def generate(text: str, model: Path) -> None:
     register_bigram_language_model()
+    register_gpt2_language_model()
     tokenizer = AutoTokenizer.from_pretrained(model, sep_token=None)
     model = AutoModelForCausalLM.from_pretrained(model)
     generate = pipeline("text-generation", model=model, tokenizer=tokenizer)

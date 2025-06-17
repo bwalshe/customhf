@@ -14,6 +14,7 @@ authors = [
    { name="Brian Walshe", email="walshe.brian@gmail.com" }
 ]
 description = "An example of creating a custom Hugging Face model, based off Andrej Karpathy's GPT-2 Tutorial"
+requires-python = ">=3.11"
 dependencies = [
    "torch",
    "transformers[torch]",
@@ -21,5 +22,5 @@ dependencies = [
 ]
 
 [project.scripts]
-train-bigram = "customhf.train:main"
+train-model = "customhf.train:main"
 generate-text = "customhf.generate:main"

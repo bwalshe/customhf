@@ -4,7 +4,7 @@ import torch
 from torch import nn
 from transformers.modeling_outputs import CausalLMOutput
 
-from customhf.model import BigramLanguageModel, BigramLanguageModelConfig
+from customhf.bigram_model import BigramLanguageModel, BigramLanguageModelConfig
 
 
 def make_model(**kwargs):
@@ -35,7 +35,8 @@ def test_loss_fn():
     targets = targets[..., 1:].contiguous()
     targets = targets.view(B * T)
     karpathy_loss = nn.functional.cross_entropy(
-        logits, targets, ignore_index=ignore_index)
+        logits, targets, ignore_index=ignore_index
+    )
 
     assert loss == karpathy_loss
 
@@ -49,21 +50,23 @@ def test_attention_mask():
 
     with torch.no_grad():
         model_short.token_embedding_table.weight = torch.nn.Parameter(
-            torch.eye(vocab_size))
+            torch.eye(vocab_size)
+        )
         model_long.token_embedding_table.weight = torch.nn.Parameter(
-            torch.eye(vocab_size))
+            torch.eye(vocab_size)
+        )
 
     input_ids = torch.ones(1, token_len, dtype=torch.long)
-    input_ids_short = input_ids[:, :token_len//2].clone()
+    input_ids_short = input_ids[:, : token_len // 2].clone()
     labels_short = input_ids_short.clone()
 
-    labels_long = torch.cat((input_ids_short, 1-input_ids_short), 1)
+    labels_long = torch.cat((input_ids_short, 1 - input_ids_short), 1)
     mask = labels_long.clone()
 
-    loss_short = model_short(input_ids=input_ids_short,
-                             labels=labels_short).loss
-    loss_long = model_long(input_ids=input_ids,
-                           attention_mask=mask, labels=labels_long).loss
+    loss_short = model_short(input_ids=input_ids_short, labels=labels_short).loss
+    loss_long = model_long(
+        input_ids=input_ids, attention_mask=mask, labels=labels_long
+    ).loss
 
     loss_short.backward()
     loss_long.backward()
@@ -81,8 +84,9 @@ def test_inputs_embeds():
     inputs_embeds = torch.ones(1, token_len, vocab_size)
     attention_mask = torch.ones(1, token_len, dtype=torch.long)
     with pytest.raises(NotImplementedError):
-        model(input_ids=None, inputs_embeds=inputs_embeds,
-              attention_mask=attention_mask)
+        model(
+            input_ids=None, inputs_embeds=inputs_embeds, attention_mask=attention_mask
+        )
 
 
 def test_return_dict_config():
