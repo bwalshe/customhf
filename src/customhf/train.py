@@ -1,49 +1,25 @@
 import argparse
+from pathlib import Path
 
 from transformers import (
     AutoTokenizer,
     DataCollatorForLanguageModeling,
+    default_data_collator,
     PreTrainedModel,
     TrainingArguments,
     Trainer,
 )
-from datasets import Dataset
-from transformers.tokenization_utils import PreTrainedTokenizer
 
-from customhf.data import script_dataset
+from customhf.data import make_dataset
 from customhf.bigram_model import BigramLanguageModel, BigramLanguageModelConfig
 from customhf.gpt2_model import GPT, GPTConfig
 from customhf import _try_setup_logging
 
 
-def preprocess(
-    dataset: Dataset, tokenizer: PreTrainedTokenizer, block_size: int = 8
-) -> Dataset:
-    def process_example(example: dict[str, str]):
-        return tokenizer(example["lines"], truncation=True)
-
-    def make_blocks(examples):
-        concatenated_examples = {k: sum(examples[k], []) for k in examples.keys()}
-        total_length = len(concatenated_examples[list(examples.keys())[0]])
-
-        if total_length >= block_size:
-            total_length = (total_length // block_size) * block_size
-
-        result = {
-            k: [t[i : i + block_size] for i in range(0, total_length, block_size)]
-            for k, t in concatenated_examples.items()
-        }
-
-        return result
-
-    return dataset.map(process_example, remove_columns=["speaker", "lines"]).map(
-        make_blocks, batched=True, num_proc=4
-    )
-
-
 def make_model(name: str, tokenizer) -> PreTrainedModel:
     if name == "bigram-language":
-        model_config = BigramLanguageModelConfig(vocab_size=tokenizer.vocab_size)
+        model_config = BigramLanguageModelConfig(
+            vocab_size=tokenizer.vocab_size)
         return BigramLanguageModel(model_config)
     if name == "nano-gpt":
         model_config = GPTConfig(bias=False)
@@ -60,19 +36,11 @@ def train(
     push_to_hub: bool = False,
 ):
     report_to = "wandb" if wandb else "none"
-
-    data = script_dataset("input.txt")
-
-    tokenizer = AutoTokenizer.from_pretrained("google-bert/bert-base-uncased")
-    tokenizer = tokenizer.train_new_from_iterator(
-        data["train"]["lines"], vocab_size=1000
-    )
-
-    data = preprocess(data, tokenizer)
-
+    tokenizer = AutoTokenizer.from_pretrained("openai-community/gpt2")
+    tokenizer.add_special_tokens({"pad_token": "[PAD]"})
+    dataset = make_dataset(tokenizer, Path("input.txt"), token_limit=1000)
     collate = DataCollatorForLanguageModeling(tokenizer, mlm=False)
-
-    model = make_model(model_name, tokenizer)
+    model = make_model(model_name, dataset.tokenizer)
 
     training_args = TrainingArguments(
         output_dir=output_dir,
@@ -92,8 +60,8 @@ def train(
     trainer = Trainer(
         model=model,
         args=training_args,
-        train_dataset=data["train"],
-        eval_dataset=data["test"],
+        train_dataset=dataset.train(),
+        eval_dataset=dataset.test(),
         processing_class=tokenizer,
         data_collator=collate,
     )
